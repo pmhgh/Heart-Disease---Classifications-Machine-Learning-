@@ -1,40 +1,27 @@
+# SVM
+
+#  Read Data
+
+# Split and preprocess(normalize) them
+
 import pandas as pd
-
-df = pd.read_csv('heart.csv')
-
-df
-
-df.info()
-
-
-X = df.drop(['output'],axis = 1)
-#print(df.value_counts())
-
-X.head()
-
-y = df['output']
-
-df.dtypes
-
-print(df['oldpeak'].value_counts())
-
-len(df)
-
+import matplotlib.pyplot as plt
 import numpy as np
-X = np.asarray(X)
-X[:5]
-
-Y = np.asanyarray(y)
-y[0:5]
-
 from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
 from sklearn import svm
 from sklearn.metrics import classification_report , confusion_matrix
 import itertools
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score
 from sklearn.metrics import jaccard_score
-
+df = pd.read_csv('heart.csv')
+X = df.drop(['output'],axis = 1)
+y = df['output']
+X = np.asarray(X)
+scaler = preprocessing.StandardScaler().fit(X)
+X = scaler.transform(X.astype(float))
+Y = np.asanyarray(y)
 X_train , X_test , y_train , y_test = train_test_split(X,y,test_size = .2 , random_state = 4)
 print('Train set:' , X_train.shape , y_train.shape)
 print('Test set:' , X_test.shape , y_test.shape)
@@ -44,10 +31,12 @@ print('Test set:' , X_test.shape , y_test.shape)
 
 clf = svm.SVC(kernel = 'rbf')
 clf.fit(X_train , y_train)
-
 yhat = clf.predict(X_test)
-yhat[:5]
 
+
+
+
+print(yhat[:5])
 print(f1_score(y_test , yhat,average = 'weighted'))
 print(jaccard_score(y_test , yhat))
 
@@ -85,6 +74,99 @@ plt.show()
 
 
 
+- Evaluate other kernels in SVM
+
+
+f1 = np.zeros((4))
+jacc = np.zeros((4))
+kernels = ['rbf','linear' , 'poly' , 'sigmoid']
+n = 0
+
+for kernel in kernels:
+    
+    clf = svm.SVC(kernel = kernel)
+    clf.fit(X_train , y_train)
+    yhat = clf.predict(X_test)
+    f1[n]  = f1_score(y_test , yhat , average = 'weighted')
+    jacc[n] = jaccard_score(y_test , yhat,pos_label= 1)
+    n  = n + 1
+print(f1)
+print(jacc)
+
+from  sklearn import metrics
+mean_acc = np.zeros((4))
+std_acc = np.zeros((4))
+kernels = ['rbf','linear' , 'poly' , 'sigmoid']
+n = 0
+
+for kernel in kernels:
+    
+    clf = svm.SVC(kernel = kernel)
+    clf.fit(X_train , y_train)
+    yhat = clf.predict(X_test)
+    mean_acc[n -1 ] = metrics.accuracy_score(y_test , yhat)
+    std_acc[n - 1] = np.std(yhat == y_test) / np.sqrt(yhat.shape[0])
+    n  = n + 1
+print(mean_acc)
+print(std_acc)
+
+
+plt.plot(['rbf','linear' , 'poly' , 'sigmoid'],f1, 'g')
+
+plt.legend(('Accuracy','+/- 1xstd' ,'+/- 3xstd'))
+plt.ylabel('Accuracy')
+plt.xlabel('Kernels)')
+plt.tight_layout()
+plt.show()
+
+
+plt.plot(['rbf','linear' , 'poly' , 'sigmoid'],mean_acc, 'g')
+plt.fill_between(['rbf','linear' , 'poly' , 'sigmoid'],mean_acc - 1 * std_acc , mean_acc + 1 * std_acc,alpha = 0.10)
+plt.fill_between(['rbf','linear' , 'poly' , 'sigmoid'],mean_acc - 3 * std_acc , mean_acc + 3 * std_acc,alpha = 0.10,color = 'red'  )
+plt.legend(('Accuracy','+/- 1xstd' ,'+/- 3xstd'))
+plt.ylabel('Accuracy')
+plt.xlabel('Kernels)')
+plt.tight_layout()
+plt.show()
+
+print(f1.max())
+
+for i in np.arange(0,3,1):
+    if f1[i] == f1.max():
+        print(kernels[i])
+        
+print(f1.max())
+
+
+
+import matplotlib.pyplot as plt
+  
+# x-coordinates of left sides of bars 
+left = [1, 2, 3, 4]
+  
+# heights of bars
+
+  
+# labels for bars
+  
+# plotting a bar chart
+plt.bar(left, f1, tick_label = kernels,
+        width = 0.8, color = ['red', 'green','blue'])
+  
+# naming the x-axis
+plt.xlabel('x - axis')
+# naming the y-axis
+plt.ylabel('y - axis')
+# plot title
+plt.title('My bar chart!')
+  
+# function to show the plot
+plt.show()
+
+# As you can see kernel = 'rbf' is better than other ones.
+
+
+
 
 
 # KNN
@@ -99,21 +181,17 @@ import seaborn as sns
 df.info()
 
 df['fbs'] = df['fbs'].astype(int)
-
 df.hist(column = 'age',bins = 50)
 
-# Normalize Data
+- Normalize Data
 
-print(X[:5])
+X = df.drop(['output'],axis = 1)
+y = df['output']
+X = np.asarray(X)
 scaler = preprocessing.StandardScaler().fit(X)
 X = scaler.transform(X.astype(float))
-print(X[:5])
-
-
-plt.hist(X)
-
-from sklearn.model_selection import train_test_split
-X_train , X_test ,y_train, y_test = train_test_split(X,y,test_size = .2 , random_state = 4)
+Y = np.asanyarray(y)
+X_train , X_test , y_train , y_test = train_test_split(X,y,test_size = .2 , random_state = 4)
 print('Train set:' , X_train.shape , y_train.shape)
 print('Test set:' , X_test.shape , y_test.shape)
 
@@ -122,15 +200,11 @@ print('Test set:' , X_test.shape , y_test.shape)
 from sklearn.neighbors import KNeighborsClassifier
 k = 4
 neigh = KNeighborsClassifier(n_neighbors = k).fit(X_train , y_train)
-neigh
-
 yhat = neigh.predict(X_test)
-yhat[0:5]
-
 print(yhat[:5])
 print(y_test[:5])
 
-# Accuracy Evaluation
+- Accuracy Evaluation
 
 from sklearn import metrics
 print('train set accuracy:', metrics.accuracy_score(y_train , neigh.predict(X_train)))
@@ -159,6 +233,65 @@ plt.ylabel('Accuracy')
 plt.xlabel('Number of Neighbors (K)')
 plt.tight_layout()
 plt.show()
+
+for i in range(84):
+    if mean_acc[i] == mean_acc.max():
+        print(i)
+print(mean_acc.max())
+
+k = 51 is the best k
+
+from sklearn.neighbors import KNeighborsClassifier
+k = 51
+neigh = KNeighborsClassifier(n_neighbors = k).fit(X_train , y_train)
+yhat = neigh.predict(X_test)
+print(yhat[:5])
+print(y_test[:5])
+print('DecitionTree Accuracy:' , metrics.accuracy_score(y_test , yhat))
+
+from sklearn.metrics import classification_report, confusion_matrix
+import itertools
+def plot_confusion_matrix(cm, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    """
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    """
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+
+    print(cm)
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+print(confusion_matrix(y_test, yhat, labels=[1,0]))
+
+cnf_matrix = confusion_matrix(y_test , yhat , labels = [1,0])
+np.set_printoptions(precision=2)
+
+plt.figure()
+plot_confusion_matrix(cnf_matrix, classes =['attack = 1','attack = 0'],normalize = False , title = 'Confusion matrix')
+
 
 from sklearn.metrics import classification_report, confusion_matrix
 import itertools
@@ -208,6 +341,7 @@ print(classification_report(y_test , yhat))
 
 
 
+
 # Decision Tree
 
 import numpy as np
@@ -216,19 +350,25 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn import metrics
 
 
+X = df.drop(['output'],axis = 1)
+y = df['output']
+X = np.asarray(X)
+scaler = preprocessing.StandardScaler().fit(X)
+X = scaler.transform(X.astype(float))
+Y = np.asanyarray(y)
+X_train , X_test , y_train , y_test = train_test_split(X,y,test_size = .2 , random_state = 4)
+print('Train set:' , X_train.shape , y_train.shape)
+print('Test set:' , X_test.shape , y_test.shape)
+
 - GINI
 
 heartTree = DecisionTreeClassifier(criterion='gini' , max_depth = 7)
 heartTree
-
 heartTree.fit(X_train , y_train)
 yhat_tree = heartTree.predict(X_test)
 
 print(yhat_tree[:5])
 print(y_test[:5])
-
-Evaluation
-
 print('DecitionTree Accuracy:' , metrics.accuracy_score(y_test , yhat_tree))
 
 - Entropy
@@ -246,7 +386,13 @@ print(y_test[:5])
 
 print('DecitionTree Accuracy:' , metrics.accuracy_score(y_test , yhat_tree))
 
-# Logistic Regression
+
+
+
+
+
+
+# LogisticRegression
 
 import numpy as np
 import pandas as pd
@@ -266,19 +412,29 @@ print('number of rows:',df.shape[0])
 print('number of columns:',df.shape[1])
 
 
+
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
+from sklearn import svm
+from sklearn.metrics import classification_report , confusion_matrix
+import itertools
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import f1_score
+from sklearn.metrics import jaccard_score
+df = pd.read_csv('heart.csv')
 X = np.asanyarray(df[['age', 'sex', 'cp', 'trtbps', 'chol', 'fbs', 'restecg', 'thalachh',
        'exng', 'oldpeak', 'slp', 'caa', 'thall']])
-X[:5]
-
 y = np.asanyarray(df['output'])
-y[:5]
+X = np.asarray(X)
+scaler = preprocessing.StandardScaler().fit(X)
 
-from sklearn import preprocessing
-X = preprocessing.StandardScaler().fit(X).transform(X)
-X[:5]
-
-from sklearn.model_selection import train_test_split
-X_train , X_test  , y_train , y_test = train_test_split(X, y ,test_size = .2 , random_state = 4)
+X = scaler.transform(X.astype(float))
+Y = np.asanyarray(y)
+X_train , X_test , y_train , y_test = train_test_split(X,y,test_size = .2 , random_state = 4)
 print('Train set:' , X_train.shape , y_train.shape)
 print('Test set:' , X_test.shape , y_test.shape)
 
@@ -348,124 +504,23 @@ print(classification_report(y_test , yhat))
 from sklearn.metrics import log_loss
 log_loss(y_test , yhat_prob)
 
+# SVM (linear)
 
-
-
-
-
-
-# Support Vector Machine
-
-import pandas as pd
-import pylab as pl
-import numpy as np
-import scipy.optimize as opt
-from sklearn import preprocessing
-from sklearn.model_selection import train_test_split
-%matplotlib inline
-import matplotlib.pyplot as plt
-
-# Data
-
-df = pd.read_csv('heart.csv')
-df.head()
-
-df['fbs'].value_counts()
-
-ax = df[df['output'] == 0][:50].plot(kind = 'scatter' , x = 'age' , y = 'fbs' , color = 'DarkBlue' , label = '0' );
-df[df['output'] == 1][:50].plot(kind = 'scatter' , x = 'age' , y = 'fbs' , color = 'Yellow' , label = '1' , ax = ax);
-plt.show()
-
-# Data Pre_processing and selection
-
-df.dtypes
-
-print(df['oldpeak'].value_counts())
-
-df.columns
-
-X = df[['age', 'sex', 'cp', 'trtbps', 'chol', 'fbs', 'restecg', 'thalachh',
-       'exng', 'oldpeak', 'slp', 'caa', 'thall']]
-y = df['output']
-print(X[:5])
-scaler = preprocessing.StandardScaler().fit(X)
-X = scaler.transform(X.astype(float))
-print(X[:5])
-
-
-- splitting
-
-from sklearn.model_selection import train_test_split
-X_train, X_test , y_train , y_test = train_test_split(X , y  ,test_size = 0.2 , random_state = 4)
-print('Train set:' , X_train.shape , y_train.shape)
-print('Test set:' , X_test.shape , y_test.shape)
-
-from sklearn import svm
-clf = svm.SVC(kernel = 'rbf')
-clf.fit(X_train , y_train)
-
-yhat = clf.predict(X_test)
-print(yhat[:5])
-y_test[:5]
-
-from sklearn.metrics import classification_report ,confusion_matrix
-import itertools
-from sklearn.metrics import confusion_matrix
-confusion_matrix(yhat, y_test)
-
-from sklearn.metrics import f1_score
-f1_score(y_test , yhat , average = 'weighted')
-
-from sklearn.metrics import jaccard_score
-jaccard_score(y_test , yhat,pos_label= 1)
-
-
-
-
-f1 = np.zeros((4))
-jacc = np.zeros((4))
-kernels = ['rbf','linear' , 'poly' , 'sigmoid']
-n = 0
-
-for kernel in kernels:
-    
-    clf = svm.SVC(kernel = kernel)
-    clf.fit(X_train , y_train)
-    yhat = clf.predict(X_test)
-    f1[n]  = f1_score(y_test , yhat , average = 'weighted')
-    jacc[n] = jaccard_score(y_test , yhat,pos_label= 1)
-    n  = n + 1
-print(f1)
-print(jacc)
-
-from  sklearn import metrics
-mean_acc = np.zeros((4))
-std_acc = np.zeros((4))
-kernels = ['rbf','linear' , 'poly' , 'sigmoid']
-n = 0
-
-for kernel in kernels:
-    
-    clf = svm.SVC(kernel = kernel)
-    clf.fit(X_train , y_train)
-    yhat = clf.predict(X_test)
-    mean_acc[n -1 ] = metrics.accuracy_score(y_test , yhat)
-    std_acc[n - 1] = np.std(yhat == y_test) / np.sqrt(yhat.shape[0])
-    n  = n + 1
-print(mean_acc)
-print(std_acc)
-
-plt.plot(['rbf','linear' , 'poly' , 'sigmoid'],mean_acc, 'g')
-plt.fill_between(['rbf','linear' , 'poly' , 'sigmoid'],mean_acc - 1 * std_acc , mean_acc + 1 * std_acc,alpha = 0.10)
-plt.fill_between(['rbf','linear' , 'poly' , 'sigmoid'],mean_acc - 3 * std_acc , mean_acc + 3 * std_acc,alpha = 0.10,color = 'green'  )
-plt.legend(('Accuracy','+/- 1xstd' ,'+/- 3xstd'))
-plt.ylabel('Accuracy')
-plt.xlabel('Kernels)')
-plt.tight_layout()
-plt.show()
-
-print(f1.min())
 print(f1.max())
 
-# RBF is the best kernel compared to other ones in SVM.
+
+# KNN
+
+print(mean_acc.max())
+
+
+# DecisionTree(gini)
+
+ 0.8524590163934426
+
+
+# It seems that SVM(linear) algorithm works better than others .
+
+
+
 
